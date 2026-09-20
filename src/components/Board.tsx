@@ -1,17 +1,18 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
 
 import { isEndpoint, isPairComplete, occupantAt } from '@/logic/engine';
 import type { Cell, GameState } from '@/logic/types';
 import { pathColor, theme } from '@/themes/theme';
 import { radius } from '@/themes/tokens';
-import { cellCenter, pointToCell, stepsBetween } from '@/ui/geometry';
+import { cellCenter, pointToCell } from '@/ui/geometry';
 
 interface Props {
   state: GameState;
   /** Lado do tabuleiro em pixels. A célula sai daqui, nunca de número fixo. */
   size: number;
   onBegin: (cell: Cell) => void;
+  /** Célula sob o dedo agora. Quem completa o caminho é o dono do estado. */
   onExtend: (cell: Cell) => void;
   onEnd: () => void;
 }
@@ -24,61 +25,36 @@ const DOT = 0.62;
 export default function Board({ state, size, onBegin, onExtend, onEnd }: Props) {
   const cellSize = size / state.level.size;
 
-  // O PanResponder é criado uma vez e sobrevive a todo render, então ele não
-  // pode fechar sobre `state`: leria sempre o do primeiro quadro. As refs dão a
-  // ele a versão atual a cada toque.
-  const liveRef = useRef({ state, cellSize, onBegin, onExtend, onEnd });
-  liveRef.current = { state, cellSize, onBegin, onExtend, onEnd };
-  const lastCellRef = useRef<Cell | null>(null);
+  // Recriado a cada render de propósito: assim os handlers enxergam o estado
+  // deste quadro. Criar uma vez e ler por ref daria o tabuleiro do primeiro
+  // render, e `PanResponder.create` é barato.
+  const pan = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    // Segura o gesto: sem isto, a rolagem de uma tela mãe rouba o dedo no meio
+    // do traço.
+    onPanResponderTerminationRequest: () => false,
 
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        // Segura o gesto: sem isto, a rolagem de uma tela mãe rouba o dedo no
-        // meio do traço.
-        onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: (evt) => {
+      const { locationX, locationY } = evt.nativeEvent;
+      // Margem zero no toque inicial: encostar na beirada do ponto fixo tem que
+      // valer, senão o jogador acha que o jogo não respondeu.
+      const cell = pointToCell(locationX, locationY, cellSize, state.level.size, 0);
+      if (cell) onBegin(cell);
+    },
 
-        onPanResponderGrant: (evt) => {
-          const live = liveRef.current;
-          const { locationX, locationY } = evt.nativeEvent;
-          const cell = pointToCell(locationX, locationY, live.cellSize, live.state.level.size, 0);
-          if (!cell) return;
-          lastCellRef.current = cell;
-          live.onBegin(cell);
-        },
+    // Só reporta onde o dedo está. Quem sabe quais células foram puladas é
+    // quem tem o estado na mão — dois eventos podem chegar antes de um render,
+    // e aqui eles enxergariam a mesma ponta velha.
+    onPanResponderMove: (evt) => {
+      const { locationX, locationY } = evt.nativeEvent;
+      const cell = pointToCell(locationX, locationY, cellSize, state.level.size);
+      if (cell) onExtend(cell);
+    },
 
-        onPanResponderMove: (evt) => {
-          const live = liveRef.current;
-          const { locationX, locationY } = evt.nativeEvent;
-          const cell = pointToCell(locationX, locationY, live.cellSize, live.state.level.size);
-          if (!cell) return;
-
-          const last = lastCellRef.current;
-          if (!last) {
-            lastCellRef.current = cell;
-            live.onBegin(cell);
-            return;
-          }
-          if (last.row === cell.row && last.col === cell.col) return;
-
-          // O dedo corre mais que os eventos: preenche as células puladas.
-          for (const step of stepsBetween(last, cell)) live.onExtend(step);
-          lastCellRef.current = cell;
-        },
-
-        onPanResponderRelease: () => {
-          lastCellRef.current = null;
-          liveRef.current.onEnd();
-        },
-        onPanResponderTerminate: () => {
-          lastCellRef.current = null;
-          liveRef.current.onEnd();
-        },
-      }),
-    [],
-  );
+    onPanResponderRelease: onEnd,
+    onPanResponderTerminate: onEnd,
+  });
 
   const stroke = cellSize * STROKE;
   const dot = cellSize * DOT;

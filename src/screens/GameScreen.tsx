@@ -17,6 +17,7 @@ import {
 import type { Cell, Level } from '@/logic/types';
 import { theme } from '@/themes/theme';
 import { fontSize, radius, spacing } from '@/themes/tokens';
+import { stepsBetween } from '@/ui/geometry';
 
 interface Props {
   level: Level;
@@ -31,17 +32,32 @@ export default function GameScreen({ level, bestMoves, hasNext, onSolved, onNext
   const [state, setState] = useState(() => createInitialState(level));
   const { width, height } = useWindowDimensions();
 
-  // Troca de nível pela seta "próximo": o componente não remonta, então o
-  // estado precisa ser refeito na mão.
-  useEffect(() => setState(createInitialState(level)), [level]);
-
   const solved = isSolved(state);
   useEffect(() => {
     if (solved) onSolved(level.id, state.moves);
   }, [solved, level.id, state.moves, onSolved]);
 
   const onBegin = useCallback((cell: Cell) => setState((s) => beginStroke(s, cell)), []);
-  const onExtend = useCallback((cell: Cell) => setState((s) => extendStroke(s, cell)), []);
+
+  // O dedo corre mais que os eventos do gesto: entre dois avisos ele pode ter
+  // pulado três células. Andar da ponta ATUAL até onde o dedo está — dentro do
+  // próprio setState, com o estado mais recente — é o que impede o traço de
+  // falhar no arrasto rápido. Fazer essa conta no componente leria a ponta do
+  // render anterior, que em gesto ligeiro já está velha.
+  const onExtend = useCallback(
+    (cell: Cell) =>
+      setState((s) => {
+        if (!s.activeColor) return s;
+        const path = s.paths[s.activeColor];
+        if (path.length === 0) return s;
+        let next = s;
+        for (const step of stepsBetween(path[path.length - 1], cell)) {
+          next = extendStroke(next, step);
+        }
+        return next;
+      }),
+    [],
+  );
   const onEnd = useCallback(() => setState((s) => endStroke(s)), []);
   const onReset = useCallback(() => setState((s) => resetLevel(s)), []);
 

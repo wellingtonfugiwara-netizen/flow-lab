@@ -37,7 +37,10 @@ export default function App() {
     <SafeAreaView style={styles.root}>
       <StatusBar style="light" />
       {level ? (
+        // A key remonta a tela ao trocar de nível pelo botão "próximo" — é o
+        // jeito do React de reiniciar estado, sem setState dentro de efeito.
         <GameScreen
+          key={level.id}
           level={level}
           bestMoves={progress[level.id]}
           hasNext={next !== undefined}

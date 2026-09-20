@@ -13,6 +13,7 @@
     "android": {
       "package": "com.niol.flowlab",
       "edgeToEdgeEnabled": true
-    }
+    },
+    "plugins": ["expo-status-bar"]
   }
 }
