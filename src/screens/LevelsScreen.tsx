@@ -62,7 +62,9 @@ function LevelCard({ level, best, onPress }: { level: Level; best?: number; onPr
         ))}
       </View>
       <Text style={styles.cardId}>{level.id}</Text>
-      <Text style={styles.cardBest}>{best === undefined ? 'aberto' : `✓ ${best}`}</Text>
+      <Text style={styles.cardBest}>
+        {level.pairs.length} cores{best === undefined ? '' : ` · ✓ ${best}`}
+      </Text>
     </Pressable>
   );
 }

@@ -29,6 +29,9 @@ export const PATH_COLORS: Readonly<Record<ColorId, string>> = {
   violet: '#a78bfa',
   coral: '#fb7185',
   lime: '#a3e635',
+  teal: '#2dd4bf',
+  orange: '#fb923c',
+  indigo: '#818cf8',
 };
 
 /** Fallback explícito: cor desconhecida vira o acento, nunca `undefined`. */

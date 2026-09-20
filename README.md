@@ -30,7 +30,29 @@ duas camadas independentes:
 2. `src/logic/solver.ts` roda um busca exaustiva em cima do resultado, nos
    testes, e prova de novo que fecha.
 
-Regenerar: `npm run gen:levels` (a semente é fixa, o resultado é reprodutível).
+### Por que os níveis são difíceis
+
+Solubilidade não basta: o primeiro catálogo fechava rápido demais. O que fazia
+o jogo ser fácil era ter **várias soluções** — com duas maneiras de encher o
+tabuleiro, qualquer tentativa razoável fecha, e o quebra-cabeça vira exercício
+de preencher espaço.
+
+Agora o gerador conta as soluções de cada candidato (busca com poda, parando na
+segunda) e procura um de **solução única**, onde cada caminho é forçado. Junto
+com isso: pedaço com menos de 4 células é descartado, pedaço reto também, e
+ponta colada na outra também. Nível único é raro — cerca de 1 em 10 no 6x6 e
+menos nos grandes —, então cada nível tem um orçamento de tempo; se ele acabar,
+fica o candidato de menos soluções **já verificado**. Nível não verificado
+nunca entra.
+
+Os caminhos que cobrem o tabuleiro saem por "backbite" (inverter o trecho entre
+uma ponta e um vizinho dela), não mais por backtracking com Warnsdorff: são
+milhares por segundo em vez de um a cada dois segundos, e a busca por solução
+única precisa de centenas deles.
+
+Regenerar: `npm run gen:levels` — **leva alguns minutos**, e a semente é fixa,
+então o resultado é reprodutível. O log de cada nível (tamanho, cores, soluções)
+sai no stderr.
 
 ## Comandos
 
