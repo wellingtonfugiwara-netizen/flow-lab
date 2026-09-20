@@ -5,11 +5,18 @@ cruzam, até não sobrar espaço vazio no tabuleiro.
 
 ## Estado
 
-Em desenvolvimento. O núcleo de regras e o catálogo de níveis estão prontos e
-testados; a interface ainda não.
+Em desenvolvimento, já jogável. Duas telas: lista de níveis e jogo.
 
 - `src/logic/` — motor do jogo, solver e níveis. **100% testado, sem React.**
+- `src/ui/` — conversão entre o dedo e a grade (puro, testado).
+- `src/storage/` — progresso no aparelho; único ponto de acesso ao AsyncStorage.
+- `src/components/`, `src/screens/` — tabuleiro, HUD e as duas telas.
 - `src/themes/` — tokens e paleta.
+
+O gesto usa `PanResponder`, que já vem no React Native: arrastar sobre uma grade
+não justifica `gesture-handler` + `reanimated`. A navegação é um `useState` em
+`App.tsx` pelo mesmo motivo. Falta: som, animação de nível fechado, mais níveis,
+anúncios e ícone.
 
 ## Como os níveis são feitos
 
