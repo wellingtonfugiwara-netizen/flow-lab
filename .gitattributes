@@ -1,0 +1,24 @@
+# Finais de linha normalizados em LF no repositorio.
+#
+# Sem isto, com core.autocrlf=true no Windows, todo checkout/merge reescreve os
+# arquivos em CRLF — e o Prettier (endOfLine: "lf") reprova, derrubando o hook
+# de pre-push. Aconteceu no release da v1.6.1 e travou o push da main.
+* text=auto eol=lf
+
+# Binarios: nunca converter.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.wav binary
+*.m4a binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.aab binary
+*.apk binary
+*.keystore binary
